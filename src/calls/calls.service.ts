@@ -1,10 +1,11 @@
 // src/calls/calls.service.ts
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CallSession } from './entities/call-session.entity';
 import { CreateCallDto, UpdateCallDto } from './dto/create-call.dto';
 import { AgoraService } from '../agora/agora.service';
+import { BillingService } from '../billing/billing.service';
 import { User } from '../users/entities/user.entity';
 
 @Injectable()
@@ -15,10 +16,17 @@ export class CallsService {
         @InjectRepository(CallSession)
         private callSessionRepository: Repository<CallSession>,
         private agoraService: AgoraService,
+        private billingService: BillingService,
     ) { }
 
     async createCall(user: User, createCallDto: CreateCallDto): Promise<CallSession> {
         this.logger.log(`Creating call for user ${user.id}, trigger: ${createCallDto.trigger_type}`);
+
+        // Check quota before proceeding
+        await this.billingService.consumeQuota(user.id);
+
+        // Get plan limits for max duration
+        const planLimits = this.billingService.getPlanLimits(user.plan);
 
         // Create call session record
         const callSession = this.callSessionRepository.create({
@@ -44,7 +52,7 @@ export class CallsService {
             phoneNumber: callSession.phone_number,
             language: user.language,
             systemPrompt,
-            maxDuration: 300,
+            maxDuration: planLimits.maxCallDuration,
         });
 
         // Update with Agora session ID

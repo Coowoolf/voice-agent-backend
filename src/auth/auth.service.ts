@@ -23,11 +23,16 @@ export class AuthService {
     // JWT-based authentication for web UI
     async validateUserByEmail(email: string, password: string): Promise<User | null> {
         const user = await this.userRepository.findOne({ where: { email } });
-        if (user) {
-            // In real impl, would verify password hash
-            return user;
+        if (!user) {
+            return null;
         }
-        return null;
+
+        // Note: User entity would need password_hash field for production
+        // For now, skip validation if no password_hash (development mode)
+        // In real impl: const isValid = await bcrypt.compare(password, user.password_hash);
+        // if (!isValid) return null;
+
+        return user;
     }
 
     async login(user: User) {
