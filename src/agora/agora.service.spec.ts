@@ -17,7 +17,10 @@ describe('AgoraService', () => {
                             const config: Record<string, string> = {
                                 AGORA_APP_ID: 'test_app_id',
                                 AGORA_API_KEY: 'test_api_key',
-                                ANTHROPIC_API_KEY: 'test_anthropic_key'
+                                AGORA_API_SECRET: 'test_api_secret',
+                                LLM_BASE_URL: 'http://127.0.0.1:8045/v1',
+                                LLM_API_KEY: 'test_llm_key',
+                                LLM_MODEL: 'gemini-3-flash'
                             };
                             return config[key];
                         })
